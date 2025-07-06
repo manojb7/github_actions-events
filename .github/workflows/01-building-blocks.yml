@@ -9,6 +9,7 @@ jobs:
                 echo "Hello, World!"
                 exit 0
     echo-goodbye:
+        needs: echo-hello
         runs-on: ubuntu-latest
         steps:
             - name: Failed Step
