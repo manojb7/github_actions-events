@@ -8,5 +8,5 @@ jobs:
         run: echo "The triggering event is ${{ toJson(github.event) }}"
       - name: show the triggering event name
         run: echo "The triggering event name is ${{ github.event_name }}"
-      - name: show the triggering event type
-        run: echo "The triggering event type is ${{ github.event.action }}"
+      - name: show the triger actor
+        run: echo "The triggering actor is ${{ github.actor }}"
