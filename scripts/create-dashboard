@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+set -e
+GRAFANA_INSTANCE=''
+CREATE_DASHBOARDS_SCRIPT="${IAC_COMPONENT_DIR}/scripts/create-dashboards"
+
+parse_args() {
+  if [ $# -lt 2 ]; then
+    echo "No Specific grafana_instance Will create for both zones"
+  else
+    GRAFANA_INSTANCE=${2}
+    echo "Setting the Instance to $GRAFANA_INSTANCE"
+  fi
+}
+
+parse_args "${@}"
+
+# ORIGINAL: Define the function to create dashboard for a single folder
+create_dashboard() {
+    local directory="$1"
+    local create_dashboards_script="$2"
+    local grafana_instance="$3"
+    local grafana_folder_uid
+    grafana_folder_uid="$(basename "$directory")"
+    
+    # ADDED: Echo statement for visibility
+    echo "Processing $grafana_folder_uid for $grafana_instance"
+    
+    # Execute the script with the required parameters
+    GRAFANA_FOLDER_UID=$grafana_folder_uid "$create_dashboards_script" "$directory" "$grafana_instance"
+    
+    # ADDED: Completion message
+    echo "Completed $grafana_folder_uid for $grafana_instance"
+}
+
+# NEW FUNCTION ADDED: Function to process all folders for one instance
+process_instance() {
+    local instance="$1"
+    local dashboard_dir="$2"
+    
+    echo "Starting parallel processing for $instance"
+    
+    # Process all folders in parallel for this specific instance
+    find "$dashboard_dir/" -mindepth 1 -type d | \
+    parallel -P 3 create_dashboard {} "$CREATE_DASHBOARDS_SCRIPT" "$instance"
+    
+    echo "Completed all dashboards for $instance"
+}
+
+export -f create_dashboard
+# NEW EXPORT ADDED:
+export -f process_instance
+
+# Set the directory containing the dashboards
+DASHBOARD_DIR="$IAC_DEPLOYMENT_DEFINITION_DIR/dashboards"
+
+# Check if the directory exists
+if [ -d "$DASHBOARD_DIR" ]; then
+    # CHANGED: Instead of single parallel call, separate by instance
+    if [ -z "$GRAFANA_INSTANCE" ]; then
+        # Process both instances, but separately to avoid conflicts
+        echo "Processing Primary Grafana (grafana)..."
+        process_instance "grafana" "$DASHBOARD_DIR"
+        
+        echo "Processing Standalone Grafana (grafana_z2)..."
+        process_instance "grafana_z2" "$DASHBOARD_DIR"
+    else
+        # Process specific instance
+        echo "Processing $GRAFANA_INSTANCE..."
+        process_instance "$GRAFANA_INSTANCE" "$DASHBOARD_DIR"
+    fi
+fi
+
+# Template and create dashboards
+CF_DOMAIN=$(yq4 '.context.imports.cf.sys_domain' "${1}")
+CONCOURSE_DOMAIN="concourse.${CF_DOMAIN}"
+mkdir -p "${IAC_DEPLOYMENT_GEN_DIR}/dashboards"
+
+erb "concourse_domain=${CONCOURSE_DOMAIN}" \
+  "$IAC_DEPLOYMENT_DEFINITION_DIR/dashboards/monitoring/concourse_build_history.json.erb" \
+  >"${IAC_DEPLOYMENT_GEN_DIR}/dashboards/concourse_build_history.json"
+
+# CHANGED: Handle both instances when no specific instance
+if [ -z "$GRAFANA_INSTANCE" ]; then
+    "${CREATE_DASHBOARDS_SCRIPT}" "${IAC_DEPLOYMENT_GEN_DIR}/dashboards" "grafana"
+    "${CREATE_DASHBOARDS_SCRIPT}" "${IAC_DEPLOYMENT_GEN_DIR}/dashboards" "grafana_z2"
+else
+    "${CREATE_DASHBOARDS_SCRIPT}" "${IAC_DEPLOYMENT_GEN_DIR}/dashboards" "$GRAFANA_INSTANCE"
+fi
+
+# ADDED: Final completion message
+echo "All dashboard creation completed successfully"
