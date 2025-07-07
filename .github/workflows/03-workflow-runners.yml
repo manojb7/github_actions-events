@@ -1,4 +1,4 @@
-name: getting os veriosn
+name: getting os veriom
 on: workflow_dispatch
 jobs:
     get-os-version:
@@ -8,3 +8,4 @@ jobs:
               run: |
                 echo "This job is running on ubuntu-latest"
                 echo "Running on: ${{ runner.os }}"
+                echo "Getting OS version using \$RUNNER_OS: $RUNNER_OS"
