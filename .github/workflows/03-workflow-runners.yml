@@ -17,4 +17,4 @@ jobs:
                 echo "This job is running on windows-latest"
                 bash: true
                 # echo "Running on: ${{ runner.os }}"
-                echo "Getting OS version using \$RUNNER_OS: $RUNNER_OS"
+                echo "Getting OS version using \$RUNNER_OS: ${RUNNER_OS}"
