@@ -9,3 +9,12 @@ jobs:
                 echo "This job is running on ubuntu-latest"
                 echo "Running on: ${{ runner.os }}"
                 echo "Getting OS version using \$RUNNER_OS: $RUNNER_OS"
+    windows-os-version:
+        runs-on: windows-latest
+        steps:
+            - name: Get OS Version
+              run: |
+                echo "This job is running on windows-latest"
+                bash: true
+                echo "Running on: ${{ runner.os }}"
+                echo "Getting OS version using \$RUNNER_OS: $RUNNER_OS"
