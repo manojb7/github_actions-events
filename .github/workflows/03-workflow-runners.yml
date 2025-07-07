@@ -1,0 +1,10 @@
+name: getting os veriosn
+on: workflow_dispatch
+jobs:
+    get-os-version:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Get OS Version
+              run: |
+                echo "This job is running on ubuntu-latest"
+                echo "Running on: ${{ runner.os }}"
