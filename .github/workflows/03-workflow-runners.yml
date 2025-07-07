@@ -1,4 +1,4 @@
-name: getting os veriom
+name: getting os verion
 on: workflow_dispatch
 jobs:
     get-os-version:
